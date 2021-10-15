@@ -1,0 +1,8 @@
+*.RHistory
+*.Rproj.user/
+original_climate_data/
+input/
+output/
+*.DS_Store
+
+.Rproj.user
