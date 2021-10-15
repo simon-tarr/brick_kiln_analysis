@@ -42,7 +42,7 @@ regional_data<-pts
 # Save the points to disk to be used later if required
 plot(cropped_mask)
 points(pts)
-write_csv(pts, file="output/india_pts.csv")
+write_csv(pts, file="input/india_pts.csv")
 
 # Compute number of kilns within each cell
 kilns<-read_csv("input/India_All_Brick_kilns_UNDP.csv") %>% 
