@@ -4,4 +4,7 @@ original_climate_data/
 output/
 *.DS_Store
 
+input/kiln_locations_processed.csv
+input/india_pts.csv
+
 .Rproj.user
