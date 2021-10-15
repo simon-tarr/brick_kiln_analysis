@@ -42,10 +42,15 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
         mutate(y=pts[i,]$y) %>% 
         rename(wbgt = value) %>% 
         add_column(date = days) %>% 
-        add_column(src = paste0(gcm, "_", scenario)) %>% 
+        add_column(gcm = gcm) %>% 
+        add_column(scenario = scenario) %>% 
+        add_column(model = wbgt_model) %>% 
         left_join(., regional_data, by = c("x", "y")) %>% 
-        dplyr::select(x, y, date, country, adm1, adm2, adm3, wbgt, src)
-
+        add_column(Tpwb = NA) %>% 
+        add_column(Tnwb = NA) %>% 
+        add_column(Tg = NA) %>% 
+        dplyr::select(x, y, date, country, adm1, adm2, adm3, wbgt, Tpwb, Tnwb, Tg, gcm, scenario, model)
+      
     }
     
     return(wbgt_output)
@@ -65,8 +70,13 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
           mutate(y=pts[i,]$y) %>% 
           rename(wbgt = data) %>% 
           add_column(date = days) %>% 
-          add_column(src = paste0(gcm, "_", scenario)) %>% 
-          select(date, x, y, Tpwb, wbgt, src)
+          add_column(gcm = gcm) %>% 
+          add_column(scenario = scenario) %>% 
+          add_column(model = wbgt_model) %>% 
+          add_column(Tnwb = NA) %>% 
+          add_column(Tg = NA) %>% 
+          left_join(., region_data, by = c("x", "y")) %>% 
+          dplyr::select(x, y, date, country, adm1, adm2, adm3, Tpwb, wbgt, gcm, scenario, model)
       }
       
       stopCluster(cl)
@@ -93,14 +103,16 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
             mutate(x=pts[i,]$x) %>% 
             mutate(y=pts[i,]$y) %>% 
             add_column(date = days) %>% 
-            add_column(src = paste0(gcm, "_", scenario)) %>% 
+            add_column(gcm = gcm) %>% 
+            add_column(scenario = scenario) %>% 
+            add_column(model = wbgt_model) %>% 
             rename(wbgt = data)
+          
         }
         
         stopCluster(cl)
         
         return(wbgt_output)
-        
         
       }
   
@@ -126,11 +138,11 @@ create_master_results_df<-function(input, method, temperature_threshold){
     for (i in 1:length(data)){
       
       point_data<-data[[i]][1,] %>% 
-        dplyr::select(-date, -wbgt)
+        dplyr::select(-date, -wbgt, -Tpwb, -Tnwb, -Tg)
       
       x<-data[[i]] %>% 
         group_by(date = lubridate::floor_date(date, method)) %>% 
-        summarise(days_over = sum(wbgt>temperature_threshold))
+        dplyr::summarise(days_over = sum(wbgt > temperature_threshold))
       
       annual_summary_df[[i]]<-as_tibble(cbind(point_data, x))
       
@@ -140,6 +152,12 @@ create_master_results_df<-function(input, method, temperature_threshold){
     
   }
   
+  rtn<-map_dfr(output, bind_rows) %>% left_join(., kilns, by = c("x", "y")) %>% 
+    dplyr::select(x, y, country.x, adm1.x, adm2.x, adm3.x, gcm, scenario, model, date, days_over, kiln_count)
+  
+  return(rtn)
+  
+}
 
 #################
 ### GFDL-ESM4 ###
@@ -161,10 +179,6 @@ gfdl_ssp585_bernard<-run_wbgt(gcm="gfdl", scenario="ssp585", wbgt_model = "berna
 gfdl_ssp126_bernard_trs<-map_dfr(gfdl_ssp126_bernard, bind_rows) 
 gfdl_ssp370_bernard_trs<-map_dfr(gfdl_ssp370_bernard, bind_rows) 
 gfdl_ssp585_bernard_trs<-map_dfr(gfdl_ssp585_bernard, bind_rows)
-
-ptm <- proc.time()
-gfdl_ssp126_liljegren<-run_wbgt(gcm="gfdl", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
-proc.time() - ptm
 
 ####################
 ### IPSL-CM6A-LR ###
@@ -219,21 +233,11 @@ ukes_ssp585_stull_trs<-map_dfr(ukes_ssp585_stull, bind_rows)
 ### CREATE CONCATENATED DATAFRAMES OF WBGT DATA ###
 ###################################################
 
+gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull"), method = "year", temperature_threshold = 30)
+gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
 
-  rtn<-map_dfr(output, bind_rows) %>% left_join(., kilns, by = c("x", "y")) %>% 
-    dplyr::select(x, y, country.x, adm1.x, adm2.x, adm3.x, src, date, days_over, kiln_count)
-  
-  return(rtn)
-  
-}
-
-
-gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull", 
-                                    "gfdl_ssp370_stull", 
-                                    "gfdl_ssp585_stull"), method = "year", temperature_threshold = 30)
-
-gfdl_monthly<-create_master_results_df(input=c("gfdl_ssp126_stull", 
-                                              "gfdl_ssp370_stull", 
-                                              "gfdl_ssp585_stull"), method = "month", temperature_threshold = 30)
+# If you want to make the data 'wider' you can do so with the following
+gfdl_annual %>% 
+  pivot_wider(values_from = days_over, names_from = c(gcm, scenario, model))
 
 

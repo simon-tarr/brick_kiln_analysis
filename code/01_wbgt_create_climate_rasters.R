@@ -13,25 +13,24 @@ library(frost)
 ### README ###
 ##############
 
-# This script is used to process raw ISIMIP3b data (2021-01-01 to 2050-12-31) 
+# This script is used to process raw ISIMIP3b data (2021-01-01 to 2050-12-31 inclusive) 
 
 # For the following GCMs:
-# GFDL, IPSL
+# GFDL-ESM4, IPSL-CM6A-L, MPI-ESM1-2-HR, MRI-ESM2-0, UKESM1-0-L
 
 # And the following emissions scenarios:
 # SSP126, SSP370, SSP585
 
 # And the following bias-corrected, near-surface, ISIMIP3b variables:
-# Air Temperature, Relative Humidity & Wind Speed
+# Mean Air Temperature, Maximum Air Temperature, Relative Humidity, Wind Speed, Shortwave Downwelling Radition
 
-# Output data are large RasterStacks for each unique combination of cliamte variable, GCM 
+# Output data are large RasterStacks for each unique combination of climate variable, GCM 
 # and emissions scenario. Each Stack contains a total of 10,957 layers
-# Each layer represents a single day for India over the time period specified above
+# Each layer represents a single day over the time period specified above
 
 # NOTE THAT THIS SCRIPT ONLY NEEDS TO BE RUN THE ONCE!
 # IT WILL SAVE THE OUTPUT FILES TO THIS RPROJECT DIRECTORY
 # USE THESE OUTPUTS IN DOWNSTREAM SCRIPTS (e.g. for running WBGT models)
-
 
 #####################################
 ### PROCESS ORIGINAL CLIMATE DATA ###

@@ -18,7 +18,8 @@ library(lubridate)
 
 # You must run 01_wbgt_process_climate.R first to process 
 # the raw ISIMIP3b climate data or download the processed data and 
-# save it in an appropriate location
+# save it in an appropriate location (see below function for the location 
+# of the relative path I've been using to access the processed climate data)
 
 ####################
 ### LOAD IN DATA ###
