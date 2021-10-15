@@ -31,12 +31,17 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
   # Grab XY coordinates only from pts dataframe
   pts<-as_tibble(pts[, 1:2])
   
+  # Define parallel cluster
+  cl<-makeCluster(cores)
+  registerDoParallel(cl)
+  
   if (wbgt_model == "stull"){
     
     print("Running Stull (2011) Model...")
     print("Note: not running in parallel due to the fast execution time of the Stull model.")
     
     for (i in 1:length(obj)){
+      
       wbgt_output[[i]]<-as_tibble(wbt.Stull(tas = obj[[i]]$tasmax, hurs = obj[[i]]$hurs)) %>% 
         mutate(x=pts[i,]$x) %>% 
         mutate(y=pts[i,]$y) %>% 
@@ -61,10 +66,8 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
       
       print("Running Bernard (1999) Model...")
       
-      cl<-makeCluster(cores)
-      registerDoParallel(cl)
-      
-      wbgt_output<-foreach(i = 1:length(obj), .packages = c("HeatStress", "dplyr", "tibble")) %dopar% {
+      wbgt_output<-foreach(i = 1:length(obj), .packages = c("HeatStress", "dplyr", "tibble"), .export = ls(globalenv())) %dopar% {
+        
         wbgt_output[[i]]<-as_tibble(wbgt.Bernard(tas = obj[[i]]$tasmax, dewp = obj[[i]]$dewp)) %>% 
           mutate(x=pts[i,]$x) %>% 
           mutate(y=pts[i,]$y) %>% 
@@ -76,7 +79,8 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
           add_column(Tnwb = NA) %>% 
           add_column(Tg = NA) %>% 
           left_join(., region_data, by = c("x", "y")) %>% 
-          dplyr::select(x, y, date, country, adm1, adm2, adm3, Tpwb, wbgt, gcm, scenario, model)
+          dplyr::select(x, y, date, country, adm1, adm2, adm3, wbgt, Tpwb, Tnwb, Tg, gcm, scenario, model)
+        
       }
       
       stopCluster(cl)
@@ -89,10 +93,8 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
         
         print("Running Liljegren (2008) Model...")
         
-        cl<-makeCluster(cores)
-        registerDoParallel(cl)
-        
         wbgt_output<-foreach(i = 1:length(obj), .packages = c("HeatStress", "dplyr", "tibble")) %dopar% {
+          
           wbgt_output[[i]]<-as_tibble(wbgt.Liljegren(tas = obj[[i]]$tasmax, 
                                                      dewp = obj[[i]]$dewp, 
                                                      wind = obj[[i]]$wind,
@@ -110,18 +112,22 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
           
         }
         
-        stopCluster(cl)
-        
+
         return(wbgt_output)
-        
       }
   
+  stopCluster(cl)
 }
+
+
 
 # Function to convert WBGT model outputs into the format specified by Edgar
 # User can specify whether to compute monthly or annual outputs
 # as well as specifying the temperature threshold over which a day is 
 # counted as 'a heatstress day'
+
+# Note this function only works on the wbgt column! This is because WBGT is an
+# output from all implementations (Stull, Bernard and Liljegren).
 create_master_results_df<-function(input, method, temperature_threshold){
   
   # input = Character vector of input WBGT models to concatenate into dataframe
@@ -168,17 +174,21 @@ gfdl_ssp126_stull<-run_wbgt(gcm="gfdl", scenario="ssp126", wbgt_model = "stull",
 gfdl_ssp370_stull<-run_wbgt(gcm="gfdl", scenario="ssp370", wbgt_model = "stull", pts=pts, cores = 6)
 gfdl_ssp585_stull<-run_wbgt(gcm="gfdl", scenario="ssp585", wbgt_model = "stull", pts=pts, cores = 6)
 
-gfdl_ssp126_stull_trs<-map_dfr(gfdl_ssp126_stull, bind_rows) 
-gfdl_ssp370_stull_trs<-map_dfr(gfdl_ssp370_stull, bind_rows) 
-gfdl_ssp585_stull_trs<-map_dfr(gfdl_ssp585_stull, bind_rows)
+# gfdl_ssp126_stull_trs<-map_dfr(gfdl_ssp126_stull, bind_rows) 
+# gfdl_ssp370_stull_trs<-map_dfr(gfdl_ssp370_stull, bind_rows) 
+# gfdl_ssp585_stull_trs<-map_dfr(gfdl_ssp585_stull, bind_rows)
 
 gfdl_ssp126_bernard<-run_wbgt(gcm="gfdl", scenario="ssp126", wbgt_model = "bernard", pts=pts, cores = 6)
 gfdl_ssp370_bernard<-run_wbgt(gcm="gfdl", scenario="ssp370", wbgt_model = "bernard", pts=pts, cores = 6)
 gfdl_ssp585_bernard<-run_wbgt(gcm="gfdl", scenario="ssp585", wbgt_model = "bernard", pts=pts, cores = 6)
 
-gfdl_ssp126_bernard_trs<-map_dfr(gfdl_ssp126_bernard, bind_rows) 
-gfdl_ssp370_bernard_trs<-map_dfr(gfdl_ssp370_bernard, bind_rows) 
-gfdl_ssp585_bernard_trs<-map_dfr(gfdl_ssp585_bernard, bind_rows)
+# gfdl_ssp126_bernard_trs<-map_dfr(gfdl_ssp126_bernard, bind_rows) 
+# gfdl_ssp370_bernard_trs<-map_dfr(gfdl_ssp370_bernard, bind_rows) 
+# gfdl_ssp585_bernard_trs<-map_dfr(gfdl_ssp585_bernard, bind_rows)
+
+gfdl_ssp126_liljegren<-run_wbgt(gcm="gfdl", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
+gfdl_ssp370_liljegren<-run_wbgt(gcm="gfdl", scenario="ssp370", wbgt_model = "liljegren", pts=pts, cores = 6)
+gfdl_ssp585_liljegren<-run_wbgt(gcm="gfdl", scenario="ssp585", wbgt_model = "liljegren", pts=pts, cores = 6)
 
 ####################
 ### IPSL-CM6A-LR ###
@@ -188,9 +198,17 @@ ipsl_ssp126_stull<-run_wbgt(gcm="ipsl", scenario="ssp126", wbgt_model = "stull",
 ipsl_ssp370_stull<-run_wbgt(gcm="ipsl", scenario="ssp370", wbgt_model = "stull", pts=pts, cores = 6)
 ipsl_ssp585_stull<-run_wbgt(gcm="ipsl", scenario="ssp585", wbgt_model = "stull", pts=pts, cores = 6)
 
-ipsl_ssp126_stull_trs<-map_dfr(ipsl_ssp126_stull, bind_rows) 
-ipsl_ssp370_stull_trs<-map_dfr(ipsl_ssp370_stull, bind_rows) 
-ipsl_ssp585_stull_trs<-map_dfr(ipsl_ssp585_stull, bind_rows)
+# ipsl_ssp126_stull_trs<-map_dfr(ipsl_ssp126_stull, bind_rows) 
+# ipsl_ssp370_stull_trs<-map_dfr(ipsl_ssp370_stull, bind_rows) 
+# ipsl_ssp585_stull_trs<-map_dfr(ipsl_ssp585_stull, bind_rows)
+
+ipsl_ssp126_bernard<-run_wbgt(gcm="ipsl", scenario="ssp126", wbgt_model = "bernard", pts=pts, cores = 6)
+ipsl_ssp370_bernard<-run_wbgt(gcm="ipsl", scenario="ssp370", wbgt_model = "bernard", pts=pts, cores = 6)
+ipsl_ssp585_bernard<-run_wbgt(gcm="ipsl", scenario="ssp585", wbgt_model = "bernard", pts=pts, cores = 6)
+
+ipsl_ssp126_liljegren<-run_wbgt(gcm="ipsl", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
+ipsl_ssp370_liljegren<-run_wbgt(gcm="ipsl", scenario="ssp370", wbgt_model = "liljegren", pts=pts, cores = 6)
+ipsl_ssp585_liljegren<-run_wbgt(gcm="ipsl", scenario="ssp585", wbgt_model = "liljegren", pts=pts, cores = 6)
 
 
 #####################
@@ -201,9 +219,17 @@ mpi_ssp126_stull<-run_wbgt(gcm="mpi", scenario="ssp126", wbgt_model = "stull", p
 mpi_ssp370_stull<-run_wbgt(gcm="mpi", scenario="ssp370", wbgt_model = "stull", pts=pts, cores = 6)
 mpi_ssp585_stull<-run_wbgt(gcm="mpi", scenario="ssp585", wbgt_model = "stull", pts=pts, cores = 6)
 
-mpi_ssp126_stull_trs<-map_dfr(mpi_ssp126_stull, bind_rows) 
-mpi_ssp370_stull_trs<-map_dfr(mpi_ssp370_stull, bind_rows) 
-mpi_ssp585_stull_trs<-map_dfr(mpi_ssp585_stull, bind_rows)
+# mpi_ssp126_stull_trs<-map_dfr(mpi_ssp126_stull, bind_rows) 
+# mpi_ssp370_stull_trs<-map_dfr(mpi_ssp370_stull, bind_rows) 
+# mpi_ssp585_stull_trs<-map_dfr(mpi_ssp585_stull, bind_rows)
+
+mpi_ssp126_bernard<-run_wbgt(gcm="mpi", scenario="ssp126", wbgt_model = "bernard", pts=pts, cores = 6)
+mpi_ssp370_bernard<-run_wbgt(gcm="mpi", scenario="ssp370", wbgt_model = "bernard", pts=pts, cores = 6)
+mpi_ssp585_bernard<-run_wbgt(gcm="mpi", scenario="ssp585", wbgt_model = "bernard", pts=pts, cores = 6)
+
+mpi_ssp126_liljegren<-run_wbgt(gcm="mpi", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
+mpi_ssp370_liljegren<-run_wbgt(gcm="mpi", scenario="ssp370", wbgt_model = "liljegren", pts=pts, cores = 6)
+mpi_ssp585_liljegren<-run_wbgt(gcm="mpi", scenario="ssp585", wbgt_model = "liljegren", pts=pts, cores = 6)
 
 ##################
 ### MRI-ESM2-0 ###
@@ -213,9 +239,18 @@ mri_ssp126_stull<-run_wbgt(gcm="mri", scenario="ssp126", wbgt_model = "stull", p
 mri_ssp370_stull<-run_wbgt(gcm="mri", scenario="ssp370", wbgt_model = "stull", pts=pts, cores = 6)
 mri_ssp585_stull<-run_wbgt(gcm="mri", scenario="ssp585", wbgt_model = "stull", pts=pts, cores = 6)
 
-mri_ssp126_stull_trs<-map_dfr(mri_ssp126_stull, bind_rows) 
-mri_ssp370_stull_trs<-map_dfr(mri_ssp370_stull, bind_rows) 
-mri_ssp585_stull_trs<-map_dfr(mri_ssp585_stull, bind_rows)
+# mri_ssp126_stull_trs<-map_dfr(mri_ssp126_stull, bind_rows) 
+# mri_ssp370_stull_trs<-map_dfr(mri_ssp370_stull, bind_rows) 
+# mri_ssp585_stull_trs<-map_dfr(mri_ssp585_stull, bind_rows)
+
+mri_ssp126_bernard<-run_wbgt(gcm="mri", scenario="ssp126", wbgt_model = "bernard", pts=pts, cores = 6)
+mri_ssp370_bernard<-run_wbgt(gcm="mri", scenario="ssp370", wbgt_model = "bernard", pts=pts, cores = 6)
+mri_ssp585_bernard<-run_wbgt(gcm="mri", scenario="ssp585", wbgt_model = "bernard", pts=pts, cores = 6)
+
+mri_ssp126_liljegren<-run_wbgt(gcm="mri", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
+mri_ssp370_liljegren<-run_wbgt(gcm="mri", scenario="ssp370", wbgt_model = "liljegren", pts=pts, cores = 6)
+mri_ssp585_liljegren<-run_wbgt(gcm="mri", scenario="ssp585", wbgt_model = "liljegren", pts=pts, cores = 6)
+
 
 #################
 ### UKESM1-LL ###
@@ -225,15 +260,25 @@ ukes_ssp126_stull<-run_wbgt(gcm="ukes", scenario="ssp126", wbgt_model = "stull",
 ukes_ssp370_stull<-run_wbgt(gcm="ukes", scenario="ssp370", wbgt_model = "stull", pts=pts, cores = 6)
 ukes_ssp585_stull<-run_wbgt(gcm="ukes", scenario="ssp585", wbgt_model = "stull", pts=pts, cores = 6)
 
-ukes_ssp126_stull_trs<-map_dfr(ukes_ssp126_stull, bind_rows) 
-ukes_ssp370_stull_trs<-map_dfr(ukes_ssp370_stull, bind_rows) 
-ukes_ssp585_stull_trs<-map_dfr(ukes_ssp585_stull, bind_rows)
+# ukes_ssp126_stull_trs<-map_dfr(ukes_ssp126_stull, bind_rows) 
+# ukes_ssp370_stull_trs<-map_dfr(ukes_ssp370_stull, bind_rows) 
+# ukes_ssp585_stull_trs<-map_dfr(ukes_ssp585_stull, bind_rows)
+
+ukes_ssp126_bernard<-run_wbgt(gcm="ukes", scenario="ssp126", wbgt_model = "bernard", pts=pts, cores = 6)
+ukes_ssp370_bernard<-run_wbgt(gcm="ukes", scenario="ssp370", wbgt_model = "bernard", pts=pts, cores = 6)
+ukes_ssp585_bernard<-run_wbgt(gcm="ukes", scenario="ssp585", wbgt_model = "bernard", pts=pts, cores = 6)
+
+ukes_ssp126_liljegren<-run_wbgt(gcm="ukes", scenario="ssp126", wbgt_model = "liljegren", pts=pts, cores = 6)
+ukes_ssp370_liljegren<-run_wbgt(gcm="ukes", scenario="ssp370", wbgt_model = "liljegren", pts=pts, cores = 6)
+ukes_ssp585_liljegren<-run_wbgt(gcm="ukes", scenario="ssp585", wbgt_model = "liljegren", pts=pts, cores = 6)
+
 
 ###################################################
 ### CREATE CONCATENATED DATAFRAMES OF WBGT DATA ###
 ###################################################
 
-gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull"), method = "year", temperature_threshold = 30)
+# Combine any combination of dataframes together
+gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull", "gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
 gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
 
 # If you want to make the data 'wider' you can do so with the following
