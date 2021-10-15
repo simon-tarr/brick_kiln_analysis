@@ -25,7 +25,7 @@ library(lubridate)
 ####################
 
 # Load cell centroids (coordinates for land ONLY)
-pts<-read_csv("output/india_pts.csv")
+pts<-read_csv("input/india_pts.csv")
 
 # Function to create output dataframes for WBGT analyses
 # Explore function code to see the expected directory structure for input climate data
@@ -44,11 +44,11 @@ create_wbgt_df<-function(gcm, scenario, pts, dewpoint_mode){
   
   print("Loading raster data...")
 
-  hursAdjust<-raster::brick(paste0("output/climate_data/", gcm, "/", scenario, "/hursAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
-  tasAdjust<-raster::brick(paste0("output/climate_data/", gcm,"/", scenario, "/tasAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
-  tasmaxAdjust<-raster::brick(paste0("output/climate_data/", gcm,"/", scenario, "/tasmaxAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
-  windAdjust<-raster::brick(paste0("output/climate_data/", gcm,"/", scenario, "/windAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
-  rsdsAdjust<-raster::brick(paste0("output/climate_data/", gcm,"/", scenario, "/rsdsAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
+  hursAdjust<-raster::brick(paste0("input/climate_data/", gcm, "/", scenario, "/hursAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
+  tasAdjust<-raster::brick(paste0("input/climate_data/", gcm,"/", scenario, "/tasAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
+  tasmaxAdjust<-raster::brick(paste0("input/climate_data/", gcm,"/", scenario, "/tasmaxAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
+  windAdjust<-raster::brick(paste0("input/climate_data/", gcm,"/", scenario, "/windAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
+  rsdsAdjust<-raster::brick(paste0("input/climate_data/", gcm,"/", scenario, "/rsdsAdjust_", trimws(gcm, whitespace = '-.*'),"_2021_2050_", scenario, ".nc"))
 
   names(hursAdjust)<-days
   names(tasAdjust)<-days

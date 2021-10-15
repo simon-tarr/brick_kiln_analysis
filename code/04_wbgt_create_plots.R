@@ -11,7 +11,7 @@ library(ggpmisc)
 # GCM/EMISSIONS SCENARIO/WBGT IMPLEMENTATION
 
 # Load in India shapefile, create mask
-shp <-raster::shapefile("input/brickbelt_shp/india_belt.shp")
+shp <-raster::shapefile("input/study_area/study_area_adm3_noPAK.shp")
 ext <- floor(extent(shp))
 rr <- raster(ext, res = 0.5)
 india_mask <- rasterize(shp, rr, field = 1)
