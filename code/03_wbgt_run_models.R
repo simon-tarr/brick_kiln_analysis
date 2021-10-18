@@ -21,7 +21,7 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
   # pts = Tibble. Dataframe containing coordinates of cell centroids
   # cores = The number of CPU cores to use for parallel model processing
   
-  obj = get(paste0(gcm, "_", scenario))
+  obj = get(paste(gcm, scenario, sep="_"))
   wbgt_output<-list()
   
   # Create vector of dates to sensibly name each layer in the rasterstack
@@ -93,7 +93,7 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
         
         print("Running Liljegren (2008) Model...")
         
-        wbgt_output<-foreach(i = 1:length(obj), .packages = c("HeatStress", "dplyr", "tibble")) %dopar% {
+        wbgt_output<-foreach(i = 1:length(obj), .packages = c("HeatStress", "dplyr", "tibble"), .export = ls(globalenv())) %dopar% {
           
           wbgt_output[[i]]<-as_tibble(wbgt.Liljegren(tas = obj[[i]]$tasmax, 
                                                      dewp = obj[[i]]$dewp, 
@@ -108,10 +108,11 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
             add_column(gcm = gcm) %>% 
             add_column(scenario = scenario) %>% 
             add_column(model = wbgt_model) %>% 
-            rename(wbgt = data)
-          
+            rename(wbgt = data) %>% 
+            add_column(Tpwb = NA) %>% 
+            left_join(., region_data, by = c("x", "y")) %>% 
+            dplyr::select(x, y, date, country, adm1, adm2, adm3, wbgt, Tpwb, Tnwb, Tg, gcm, scenario, model)
         }
-        
 
         return(wbgt_output)
       }

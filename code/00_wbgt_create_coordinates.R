@@ -2,6 +2,8 @@
 library(tidyverse)
 library(raster)
 library(lubridate)
+library(janitor)
+library(rgdal)
 
 # This script takes raw or processed climate data and creates a dataframe
 # of cell centroids and information on the location and number of kilns
