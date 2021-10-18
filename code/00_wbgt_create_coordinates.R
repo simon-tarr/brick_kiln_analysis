@@ -43,8 +43,6 @@ india_pts_all <- as_tibble(sp::coordinates(cropped_mask))
 india_values <-as_tibble(raster::extract(cropped_mask, india_pts_all))
 pts <-as_tibble(cbind(india_pts_all, india_values)) %>% drop_na() %>% dplyr::select(-value)
 
-region_data<-pts
-
 # Extract regional information from regional areas shapefile
 pts<-raster::extract(shp, pts) %>% 
   dplyr::select(NAME_0, NAME_1, NAME_2, NAME_3) %>% 
@@ -52,6 +50,8 @@ pts<-raster::extract(shp, pts) %>%
   as_tibble()
 
 names(pts)<-c("x", "y", "country", "adm1", "adm2", "adm3")
+
+region_data<-pts
 
 # Take a peek to make sure everything looks okay
 # You should see a circle on each land cell across the landscape

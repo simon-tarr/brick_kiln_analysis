@@ -50,7 +50,7 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
         add_column(gcm = gcm) %>% 
         add_column(scenario = scenario) %>% 
         add_column(model = wbgt_model) %>% 
-        left_join(., regional_data, by = c("x", "y")) %>% 
+        left_join(., region_data, by = c("x", "y")) %>% 
         add_column(Tpwb = NA) %>% 
         add_column(Tnwb = NA) %>% 
         add_column(Tg = NA) %>% 
@@ -279,7 +279,7 @@ ukes_ssp585_liljegren<-run_wbgt(gcm="ukes", scenario="ssp585", wbgt_model = "lil
 ###################################################
 
 # Combine any combination of dataframes together
-gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull", "gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
+gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull", "gfdl_ssp126_bernard", "gfdl_ssp126_liljegren"), method = "year", temperature_threshold = 30)
 gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
 
 # If you want to make the data 'wider' you can do so with the following
