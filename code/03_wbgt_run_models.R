@@ -7,6 +7,12 @@ library(foreach)
 # Some models (e.g. Bernard) require a parallel backend - set number of cores appropriately
 run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
   
+  # gcm = Character. Shortname of the GCM e.g. GFDL-ESM2 would become gfdl. Must be one of: gfdl, ipsl, mpi, mri or ukes
+  # scenario = Character. The emissions scenario of interest. Can be one of: ssp126, ssp370, ssp585
+  # wbgt_model = Character. The WBGT model you want to run. Can be one of: stull, bernard, liljegren
+  # pts = Tibble. Dataframe containing coordinates of cell centroids
+  # cores = The number of CPU cores to use for parallel model processing
+  
   if (cores > parallel::detectCores()) {
     
     stop(paste0("Execution halted! You have specifed more cores than your computer has! Please reduce the number
@@ -14,12 +20,6 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
          that you run this function with ", parallel::detectCores()-2, " cores so that there's some CPU overhead for other
          activities on your computer."))
   }
-  
-  # gcm = Character. Shortname of the GCM e.g. GFDL-ESM2 would become gfdl. Must be one of: gfdl, ipsl, mpi, mri or ukes
-  # scenario = Character. The emissions scenario of interest. Can be one of: ssp126, ssp370, ssp585
-  # wbgt_model = Character. The WBGT model you want to run. Can be one of: stull, bernard, liljegren
-  # pts = Tibble. Dataframe containing coordinates of cell centroids
-  # cores = The number of CPU cores to use for parallel model processing
   
   obj = get(paste(gcm, scenario, sep="_"))
   wbgt_output<-list()
@@ -118,6 +118,7 @@ run_wbgt<-function(gcm, scenario, wbgt_model, pts, cores){
       }
   
   stopCluster(cl)
+  
 }
 
 
