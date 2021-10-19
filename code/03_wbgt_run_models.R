@@ -279,9 +279,17 @@ ukes_ssp585_liljegren<-run_wbgt(gcm="ukes", scenario="ssp585", wbgt_model = "lil
 ### CREATE CONCATENATED DATAFRAMES OF WBGT DATA ###
 ###################################################
 
-# Combine any combination of dataframes together
-gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_stull", "gfdl_ssp126_bernard", "gfdl_ssp126_liljegren"), method = "year", temperature_threshold = 30)
-gfdl_annual<-create_master_results_df(input=c("gfdl_ssp126_bernard"), method = "year", temperature_threshold = 30)
+# Use create_master_results_df() to combine whatever datasets you like
+# while specifying the temperature threshold over which to count 'heatstress days'
+# Some examples of how to combine are below
+
+# Combine SSP126 - Stull models only
+example_1<-create_master_results_df(input=c("gfdl_ssp126_stull", 
+                                              "ipsl_ssp126_stull", 
+                                              "mpi_ssp126_stull",
+                                              "mri_ssp126_stull",
+                                              "ukes_ssp126_stull"), 
+                                      method = "year", temperature_threshold = 30)
 
 # If you want to make the data 'wider' you can do so with the following
 gfdl_annual %>% 
