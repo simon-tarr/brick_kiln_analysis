@@ -5,37 +5,30 @@ library(lubridate)
 library(janitor)
 library(rgdal)
 
-# This script takes raw or processed climate data and creates a dataframe
-# of cell centroids and information on the location and number of kilns
+# This script creates a dataframe of cell centroids and information 
+# on the location and number of kilns
 # Run this script every time you start a new R session
 
 ###############################
 ### CREATE LAND COORDINATES ###
 ###############################
 
-# Load in India shapefile, create mask
-# Change this shapefile input to whatever you like as ISIMIP3b data is global
-# in extent; this script will crop and mask whatever you give it, producing
-# kiln and cell centroid data for whatever you provide it.
+# Load in shapefile. This .shp can be *any* extent b/c raw ISIMIP3b data are global
+# You can change this input shapefile to whatever you like 
+# as this code block will crop and mask whatever area you give it
 shp <-raster::shapefile("input/study_area/study_area_adm3_noPAK.shp")
 ext <- floor(extent(shp))
 rr <- raster(ext, res = 0.5)
 india_mask <- rasterize(shp, rr, field = 1)
 
-# Load in a climate raster, crop to extent of india_mask
+# Load in single *raw* climate raster, crop to extent of india_mask
 # Doesn't matter which original ISIMIP raster you use as all have the same resolution and extent
-# Creates a raster of India's land and removes all ocean cells which we don't process
-# If you haven't downloaded the *raw* ISIMIP3b climate data, this will fail!
-# Next line of code will grab climate which has allready been cropped and masked
+# Here I'm feeding it GFDL-SSP126-RelativeHumidity, but you can use whatever you like - it's just a template raster
+# Creates a raster of your study area's land and removes all ocean cells (which we aren't interested in)
+# If you haven't downloaded the *raw* ISIMIP3b climate data, the next line of code will fail!
 r <-raster::brick("original_climate_data/gdfl-esm4/ssp126/hursAdjust/gfdl-esm4_r1i1p1f1_w5e5_ssp126_hursAdjust_global_daily_2021_2030.nc")
 cropped_ext <- raster::crop(x = r[[1]], y = india_mask)
 cropped_mask <- raster::mask(cropped_ext, india_mask)
-
-# If you don't have the raw ISIMIP3b climate data, the above code will fail
-# However, this line here will simply grab an already processed climate raster
-# and the rest of the code will proceed as normal
-cropped_mask<-raster::brick("input/climate_data/gfdl-esm4/ssp126/hursAdjust_gfdl_2021_2050_ssp126.nc")
-cropped_mask<-cropped_mask[[1]]
 
 # Create tibble of coordinates and values for Indian land area only
 # We drop rows where values=NA as these are ocean cells whic we don't process
@@ -55,7 +48,7 @@ region_data<-pts
 
 # Take a peek to make sure everything looks okay
 # You should see a circle on each land cell across the landscape
-# Save the points to disk to be used later if required
+# Save the points to disk to be used later
 plot(cropped_mask)
 points(pts)
 write_csv(pts, file="input/india_pts.csv")
