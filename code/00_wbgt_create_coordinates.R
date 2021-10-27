@@ -30,7 +30,7 @@ r <-raster::brick("original_climate_data/gdfl-esm4/ssp126/hursAdjust/gfdl-esm4_r
 cropped_ext <- raster::crop(x = r[[1]], y = india_mask)
 cropped_mask <- raster::mask(cropped_ext, india_mask)
 
-# Create tibble of coordinates and values for Indian land area only
+# Create tibble of coordinates and values
 # We drop rows where values=NA as these are ocean cells whic we don't process
 india_pts_all <- as_tibble(sp::coordinates(cropped_mask))
 india_values <-as_tibble(raster::extract(cropped_mask, india_pts_all))
